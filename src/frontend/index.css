@@ -1,0 +1,83 @@
+@font-face {
+  font-family: "Fraunces";
+  src: url("/assets/fonts/Fraunces.woff2") format("woff2");
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Plus Jakarta Sans";
+  src: url("/assets/fonts/PlusJakartaSans.woff2") format("woff2");
+  font-weight: 200 800;
+  font-style: normal;
+  font-display: swap;
+}
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 1 0 0;
+    --foreground: 0.2 0.04 255;
+    --card: 1 0 0;
+    --card-foreground: 0.2 0.04 255;
+    --popover: 1 0 0;
+    --popover-foreground: 0.2 0.04 255;
+    --primary: 0.28 0.09 252;
+    --primary-foreground: 1 0 0;
+    --secondary: 0.95 0.015 255;
+    --secondary-foreground: 0.28 0.09 252;
+    --muted: 0.96 0.01 255;
+    --muted-foreground: 0.5 0.04 255;
+    --accent: 0.65 0.18 42;
+    --accent-foreground: 1 0 0;
+    --destructive: 0.55 0.22 25;
+    --destructive-foreground: 1 0 0;
+    --border: 0.9 0.02 255;
+    --input: 0.9 0.02 255;
+    --ring: 0.28 0.09 252;
+    --radius: 0.625rem;
+    --chart-1: 0.28 0.09 252;
+    --chart-2: 0.65 0.18 42;
+    --chart-3: 0.55 0.12 175;
+    --chart-4: 0.7 0.15 140;
+    --chart-5: 0.6 0.16 320;
+    --sidebar: 0.97 0.01 255;
+    --sidebar-foreground: 0.2 0.04 255;
+    --sidebar-primary: 0.28 0.09 252;
+    --sidebar-primary-foreground: 1 0 0;
+    --sidebar-accent: 0.93 0.02 255;
+    --sidebar-accent-foreground: 0.28 0.09 252;
+    --sidebar-border: 0.9 0.02 255;
+    --sidebar-ring: 0.28 0.09 252;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground font-sans;
+  }
+}
+
+.hero-gradient {
+  background: radial-gradient(
+    ellipse 80% 60% at 50% -10%,
+    oklch(0.28 0.09 252 / 0.12) 0%,
+    oklch(0.65 0.18 42 / 0.04) 60%,
+    transparent 100%
+  );
+}
+
+.section-wave {
+  background: linear-gradient(
+    180deg,
+    oklch(0.97 0.01 255) 0%,
+    oklch(1 0 0) 100%
+  );
+}
