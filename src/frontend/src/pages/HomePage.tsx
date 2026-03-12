@@ -16,6 +16,7 @@ import { motion } from "motion/react";
 import type { Variants } from "motion/react";
 import Footer from "../components/Footer";
 import Navbar from "../components/Navbar";
+import { useSEO } from "../hooks/useSEO";
 
 const CATEGORIES = [
   { label: "Relationship", emoji: "💑" },
@@ -80,6 +81,14 @@ const itemVariants: Variants = {
 };
 
 export default function HomePage() {
+  useSEO({
+    title:
+      "Vishwodya Listener | Talk to Someone Online | Emotional Support India",
+    description:
+      "Vishwodya Listener is a safe and private platform where you can talk to a listener, share your problems, and receive emotional listening support without judgment. Available across India. Starting at ₹49.",
+    canonical: "https://vishwodyalistener.com/",
+  });
+
   return (
     <div className="min-h-screen flex flex-col">
       <Navbar />

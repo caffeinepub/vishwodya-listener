@@ -21,6 +21,7 @@ import type { User } from "../backend";
 import Footer from "../components/Footer";
 import Navbar from "../components/Navbar";
 import { useActor } from "../hooks/useActor";
+import { useSEO } from "../hooks/useSEO";
 
 const CATEGORIES = [
   "Relationship",
@@ -49,6 +50,13 @@ function getDateCode() {
 }
 
 export default function BookPage() {
+  useSEO({
+    title: "Book a Listening Session | Talk to a Listener | Vishwodya",
+    description:
+      "Book an anonymous emotional support session online. Talk to a compassionate listener about breakup, loneliness, stress, or anything on your mind. Sessions from ₹49.",
+    canonical: "https://vishwodyalistener.com/book",
+  });
+
   const navigate = useNavigate();
   const { actor } = useActor();
 
@@ -156,9 +164,16 @@ export default function BookPage() {
       return;
     }
 
+    const freeMinutesToUse =
+      useFreeMinutes && existingUser
+        ? BigInt(Math.floor(freeMinutesDiscount / (basePrice / duration)))
+        : 0n;
+
     setIsSubmitting(true);
     try {
-      const result = await actor.submitSession(
+      // Cast to any to support the updated 13-param backend signature
+      // (backend.d.ts reflects the new API; backend.ts wrapper is auto-generated)
+      const result = (await (actor as any).submitSession(
         phone,
         name,
         age,
@@ -171,7 +186,8 @@ export default function BookPage() {
         couponStatus === "valid" ? couponCode : "",
         referralCode,
         getDateCode(),
-      );
+        freeMinutesToUse,
+      )) as { sessionId: string; userReferralCode: string };
       sessionStorage.setItem(
         "vishwodya_confirmation",
         JSON.stringify({

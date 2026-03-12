@@ -43,15 +43,23 @@ export interface User {
     referredBy: string;
     phone: string;
 }
+export interface Referral {
+    id: string;
+    referrerPhone: string;
+    referredPhone: string;
+    rewardGiven: boolean;
+    createdAt: bigint;
+}
 export interface backendInterface {
     addCoupon(code: string, discountType: string, discountValue: bigint, expiryTimestamp: bigint, usageLimit: bigint): Promise<boolean>;
     adminLogin(username: string, password: string): Promise<boolean>;
     assignListener(sessionId: string, listener: string): Promise<boolean>;
     getCoupons(): Promise<Array<Coupon>>;
+    getReferrals(): Promise<Array<Referral>>;
     getSessions(statusFilter: string): Promise<Array<Session>>;
     getUserByPhone(phone: string): Promise<User | null>;
     getUsers(): Promise<Array<User>>;
-    submitSession(userPhone: string, name: string, age: string, gender: string, preferredListener: string, language: string, problemCategory: string, description: string, duration: bigint, couponCode: string, referralCode: string, dateCode: string): Promise<{
+    submitSession(userPhone: string, name: string, age: string, gender: string, preferredListener: string, language: string, problemCategory: string, description: string, duration: bigint, couponCode: string, referralCode: string, dateCode: string, freeMinutesToUse: bigint): Promise<{
         userReferralCode: string;
         sessionId: string;
     }>;

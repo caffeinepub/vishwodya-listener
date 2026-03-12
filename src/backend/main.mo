@@ -1,10 +1,10 @@
 import Text "mo:core/Text";
 import Int "mo:core/Int";
+import Nat "mo:core/Nat";
 import List "mo:core/List";
 import Time "mo:core/Time";
 import Array "mo:core/Array";
 import Order "mo:core/Order";
-import Runtime "mo:core/Runtime";
 import Map "mo:core/Map";
 import Iter "mo:core/Iter";
 import Principal "mo:core/Principal";
@@ -67,8 +67,44 @@ actor {
   var referralCounter = 1000;
   var sessionSerial : Nat = 0;
 
+  // Seed default coupons (far-future expiry: year 2099 in nanoseconds)
+  let farFuture : Int = 4070908800000000000;
+  coupons.add(
+    "FIRST50",
+    {
+      code = "FIRST50";
+      discountType = "Percent";
+      discountValue = 50;
+      expiryTimestamp = farFuture;
+      usageLimit = 10000;
+      usedCount = 0;
+    },
+  );
+  coupons.add(
+    "LISTEN30",
+    {
+      code = "LISTEN30";
+      discountType = "Percent";
+      discountValue = 30;
+      expiryTimestamp = farFuture;
+      usageLimit = 10000;
+      usedCount = 0;
+    },
+  );
+  coupons.add(
+    "WELCOME20",
+    {
+      code = "WELCOME20";
+      discountType = "Percent";
+      discountValue = 20;
+      expiryTimestamp = farFuture;
+      usageLimit = 10000;
+      usedCount = 0;
+    },
+  );
+
   // Helper Functions for Comparison and Sorting
-  module Session {
+  module SessionModule {
     public func compareByCreatedAtDesc(a : Session, b : Session) : Order.Order {
       Int.compare(b.createdAt, a.createdAt);
     };
@@ -131,7 +167,8 @@ actor {
     duration : Nat,
     couponCode : Text,
     referralCode : Text,
-    dateCode : Text
+    dateCode : Text,
+    freeMinutesToUse : Nat
   ) : async {
     sessionId : Text;
     userReferralCode : Text;
@@ -164,6 +201,43 @@ actor {
       };
     };
 
+    // Process referral reward: give referrer 5 free minutes (max 30 total)
+    if (referralCode != "") {
+      // Find the referrer by matching referralCode
+      var referrerPhone : Text = "";
+      users.values().forEach(
+        func(u : User) {
+          if (u.referralCode == referralCode and u.phone != userPhone) {
+            referrerPhone := u.phone;
+          };
+        }
+      );
+      if (referrerPhone != "") {
+        switch (users.get(referrerPhone)) {
+          case (?referrer) {
+            let newBalance = Nat.min(referrer.freeMinutesBalance + 5, 30);
+            let updatedReferrer : User = {
+              referrer with
+              freeMinutesBalance = newBalance;
+              totalReferrals = referrer.totalReferrals + 1;
+            };
+            users.add(referrerPhone, updatedReferrer);
+            // Record the referral
+            let refId = "RF" # now.toText();
+            let newReferral : Referral = {
+              id = refId;
+              referrerPhone;
+              referredPhone = userPhone;
+              rewardGiven = true;
+              createdAt = now;
+            };
+            referrals.add(refId, newReferral);
+          };
+          case (null) {};
+        };
+      };
+    };
+
     // Pricing
     var finalPrice = switch (duration) {
       case (10) { 49 };
@@ -172,7 +246,7 @@ actor {
       case (_) { 0 };
     };
 
-    // Apply coupon
+    // Apply coupon and increment usedCount
     if (couponCode != "") {
       switch (coupons.get(couponCode)) {
         case (?coupon) {
@@ -181,8 +255,42 @@ actor {
           } else if (coupon.discountType == "Flat") {
             if (finalPrice > coupon.discountValue) {
               finalPrice -= coupon.discountValue;
+            } else {
+              finalPrice := 0;
             };
           };
+          // Increment usedCount
+          let updatedCoupon : Coupon = {
+            coupon with usedCount = coupon.usedCount + 1
+          };
+          coupons.add(couponCode, updatedCoupon);
+        };
+        case (null) {};
+      };
+    };
+
+    // Apply free minutes discount and deduct from user balance
+    var actualFreeMinutesUsed : Nat = 0;
+    if (freeMinutesToUse > 0) {
+      switch (users.get(userPhone)) {
+        case (?user) {
+          let available = user.freeMinutesBalance;
+          let toUse = Nat.min(freeMinutesToUse, available);
+          let pricePerMin = switch (duration) {
+            case (10) { 49 };
+            case (20) { 99 / 20 };
+            case (30) { 149 / 30 };
+            case (_) { 0 };
+          };
+          let freeDiscount = Nat.min(toUse * pricePerMin, finalPrice);
+          finalPrice := finalPrice - freeDiscount;
+          // Calculate actual minutes used based on discount applied
+          actualFreeMinutesUsed := toUse;
+          // Deduct free minutes from user balance
+          let updatedUser : User = {
+            user with freeMinutesBalance = available - toUse
+          };
+          users.add(userPhone, updatedUser);
         };
         case (null) {};
       };
@@ -203,7 +311,7 @@ actor {
       status = "Pending";
       listenerAssigned = "";
       couponUsed = couponCode;
-      freeMinutesUsed = 0;
+      freeMinutesUsed = actualFreeMinutesUsed;
       finalPrice;
       createdAt = now;
       dateCode;
@@ -233,7 +341,7 @@ actor {
       }
     );
 
-    sessionList.toArray().sort(Session.compareByCreatedAtDesc);
+    sessionList.toArray().sort(SessionModule.compareByCreatedAtDesc);
   };
 
   // Assign Listener
@@ -273,6 +381,11 @@ actor {
     coupons.values().toArray();
   };
 
+  // Get Referrals
+  public query ({ caller }) func getReferrals() : async [Referral] {
+    referrals.values().toArray();
+  };
+
   // Add Coupon
   public shared ({ caller }) func addCoupon(
     code : Text,
@@ -293,7 +406,6 @@ actor {
     true;
   };
 
-  // Seed Coupons
   system func preupgrade() {};
   system func postupgrade() {};
 

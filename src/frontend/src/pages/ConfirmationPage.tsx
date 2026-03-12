@@ -16,6 +16,7 @@ import { motion } from "motion/react";
 import { toast } from "sonner";
 import Footer from "../components/Footer";
 import Navbar from "../components/Navbar";
+import { useSEO } from "../hooks/useSEO";
 
 interface ConfirmationState {
   sessionId: string;
@@ -29,6 +30,10 @@ interface ConfirmationState {
 }
 
 export default function ConfirmationPage() {
+  useSEO({
+    title: "Session Confirmed | Vishwodya Listener",
+  });
+
   const { sessionId } = useParams({ strict: false }) as { sessionId: string };
   const state = (() => {
     try {
